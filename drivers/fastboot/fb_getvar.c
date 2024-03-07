@@ -162,7 +162,7 @@ static void getvar_bootloader_version(char *var_parameter, char *response)
 {
 	char s_version[32];
 	strcpy(s_version, "01.01.\0");
-	strcat(s_version, U_BOOT_DATE_TIME);
+	strcat(s_version, ACS_VERSION);
 	printf("s_version: %s\n", s_version);
 	if (busy_flag == 1) {
 		fastboot_response("INFOversion-bootloader: ", response, "%s", s_version);
