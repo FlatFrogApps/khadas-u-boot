@@ -12,7 +12,7 @@ static int do_bootloadr_version(cmd_tbl_t *cmdtp, int flag, int argc, char * con
 {
 	char s_version[64];
 	strcpy(s_version, "01.01.");
-	strcat(s_version, ACS_VERSION);
+	strcat(s_version, U_BOOT_DATE_TIME);
 	printf("s_version: %s\n", s_version);
 	env_set("bootloader_version", s_version);
 	return 0;
