@@ -779,7 +779,50 @@
             "if tftp 1080000 u-boot.bin.signed; then "\
                 "store boot_write bootloader 1080000 $filesize;"\
             "fi;"\
-            "\0"
+            "\0"\
+        "flatfrog_hardware="\
+            /* \
+             * If appending to "bootargs" then this must be executed after "storeargs"\
+             * \
+             * i2c bus              - list available busses \
+             * i2c dev [busnum]     - show or activate a bus \
+             * i2c probe [chipaddr] - probe all addresses, or a single specific address \
+             * i2c md 50 0.2 10     - read from chip addr 50, start at memory addr 0 (2byte\
+             *                        addressing), read 16 bytes \
+             * i2c mw 50 0a.2 fe    - write to chip addr 50, start at memory addr 0a (2byte\
+             *                        addressing), write value fe \
+             * \
+             * Check if EEPROM exists on bus 5 (I2CM_F) \
+             */\
+            "i2c dev 5;"\
+            "if i2c probe 50; then "\
+                /* 2nd gen HW Cogo*/\
+                /* \
+                 * GPIOD_5 is VIN_DET \
+                 * This is slightly dangerous usage, as "gpio input" result of 1 \
+                 * might means both gpio HIGH and ERROR, see: \
+                 * https://github.com/u-boot/u-boot/commit/dd2b8c1155d016800cbbaa1bd70efdd81f9da493 \
+                 * \
+                 * Also, for some odd reason this if-clause is inverted \
+                 *  * if 0; -> executes "then" part \
+                 *  * if 1; -> executes "else" part \
+                 */\
+                "if gpio input GPIOD_5; then "\
+                    /* clear all LEDs, \
+                     * but LEDs are not powered anyway without VIN_DET==HIGH*/\
+                    "gpio set GPIOY_8; gpio set GPIOT_18; gpio set GPIOT_19;"\
+                    "systemoff;"\
+                "else "\
+                    /* clear GREEN to show BLUE+RED->MAGENTA during boot */\
+                    "gpio set GPIOY_8;"\
+                "fi;"\
+                "setenv androidboot.dtbo_idx 1;"\
+            "else "\
+                /* 1st gen HW Cogo and Athena does not have I2C EEPROM */\
+                /* Cogo and Athena will have different overlays on index 0 */\
+                "setenv androidboot.dtbo_idx 0;"\
+            "fi;"\
+        "\0"
 #endif
 
 #define CONFIG_PREBOOT  \
@@ -791,6 +834,7 @@
             "run wol_init;"\
             "run check_vbo;"\
             "run storeargs;"\
+            "run flatfrog_hardware;"\
             "run upgrade_key;" \
             "bcb uboot-command;" \
             "run switch_bootmode;" \
